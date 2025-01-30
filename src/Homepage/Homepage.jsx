@@ -1,27 +1,38 @@
 import React, { useState } from 'react';
 import { Container, TextField, Button, Typography, CircularProgress, Box } from '@mui/material';
 import "./Homepage.css";
+import axios from "axios";
+
 
 function Homepage() {
   const [topic, setTopic] = useState("");
+  const [perplexityResponse, setPerplexityResponse] = useState(null);
+
+  const systemMessage = "Be precise and concise. List names of real experts and their contact information (phone number and/or email). Give a link to their website if applicable.";
+  const userRequest = `Find me legal experts on ${topic}`;
+
+  const sendRequest = async () => {
+      try {
+        console.log(userRequest);
+          const response = await axios.post("http://localhost:5002/api/chat", {
+              model: "sonar",
+              messages: [
+                  { role: "system", content: systemMessage },
+                  { role: "user", content: userRequest }
+              ],
+              max_tokens: 100,
+              temperature: 0.7
+          });
+
+          setPerplexityResponse(response.data);
+      } catch (error) {
+          console.error(error);
+      }
+  };
 
   const handleChange = (event) => {
     setTopic(event.target.value);
   }
-
-  const systemMessage = "Be precise and concise. List names of real experts and their contact information (phone number and/or email). Give a link to their website if applicable. If you cannot find any experts, respond with 'No legal experts were found that fit your description.'";
-  const userRequest = `Find me legal experts on ${topic}`;
-
-  const options = {
-    method: 'POST',
-    headers: {Authorization: `Bearer ${process.env.REACT_APP_API_KEY}`, 'Content-Type': 'application/json'},
-    body: `{"model":"sonar","messages":[{"role":"system","content":${systemMessage}},{"role":"user","content":${userRequest}}],"max_tokens":"Optional","temperature":0.2,"top_p":0.9,"search_domain_filter":["perplexity.ai"],"return_images":false,"return_related_questions":false,"search_recency_filter":"month","top_k":0,"stream":false,"presence_penalty":0,"frequency_penalty":1,"response_format":null}`
-  };
-  
-  fetch('https://api.perplexity.ai/chat/completions', options)
-    .then(response => response.json())
-    .then(response => console.log(response))
-    .catch(err => console.error(err));
 
   return (
     <Container maxWidth="md">
@@ -29,6 +40,7 @@ function Homepage() {
         <Typography variant="h2">
           Find me legal experts on...
         </Typography>
+
         <div id="issue-textfield">
           <TextField
             fullWidth
@@ -38,12 +50,19 @@ function Homepage() {
             onChange={handleChange}
           />
         </div>
-        <Button id="legal-expert-button" variant="contained">Find a legal expert!</Button>
+        <Button onClick={sendRequest} id="legal-expert-button" variant="contained">Find a legal expert!</Button>
       </div>
 
-      <Box id="loading-icon">
-        <CircularProgress />
-      </Box>
+      <Typography variant="h2">
+          Results
+      </Typography>
+
+      {perplexityResponse ? 
+        <Typography variant="h5" id="response-text">{perplexityResponse.choices[0].message.content}</Typography> : 
+        <Box id="loading-icon">
+          <CircularProgress />
+        </Box>
+      }
     </Container>
   )
 }
