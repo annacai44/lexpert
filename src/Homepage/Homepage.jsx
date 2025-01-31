@@ -8,7 +8,7 @@ function Homepage() {
   const [topic, setTopic] = useState("");
   const [perplexityResponse, setPerplexityResponse] = useState(null);
 
-  const systemMessage = "Be precise and concise. List names of real experts and their contact information (phone number and/or email). Give a link to their website if applicable.";
+  const systemMessage = "Be precise and concise. The more information you provide, the better the results.";
   const userRequest = `Find me legal experts on ${topic}`;
 
   const sendRequest = async () => {
