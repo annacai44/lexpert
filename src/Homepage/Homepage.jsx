@@ -20,7 +20,7 @@ function Homepage() {
                   { role: "system", content: systemMessage },
                   { role: "user", content: userRequest }
               ],
-              max_tokens: 100,
+              max_tokens: 4096,
               temperature: 0.7
           });
 
