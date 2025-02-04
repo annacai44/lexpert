@@ -15,14 +15,16 @@ function formatLegalExperts(text) {
 function Homepage() {
   const [topic, setTopic] = useState("");
   const [perplexityResponse, setPerplexityResponse] = useState(null);
+  const [sentRequest, setSentRequest] = useState(false);
   const [location, setLocation] = useState("");
   const [specialization, setSpecialization] = useState("");
   const [university, setUniversity] = useState("");
   
   const systemMessage = "Be precise and concise. The more information you provide, the better the results.";
-  const userRequest = `Find me legal experts on ${topic}. Provide the person's position, description, expertise, and perspective. Number each person.`;
+  const userRequest = `Find me legal experts on ${topic}. Provide the person's position, description, expertise indented. Number each person. Only include people who are alive today. Do not output any other text other than the info above!`;
 
   const sendRequest = async () => {
+    setSentRequest(true);
       try {
         console.log(userRequest);
           const response = await axios.post("http://localhost:5002/api/chat", {
@@ -112,10 +114,14 @@ function Homepage() {
       </Typography>
 
       {perplexityResponse ? 
-        <Typography variant="h5" id="response-text">{formatLegalExperts(perplexityResponse.choices[0].message.content)}</Typography> : 
+        <div className="response" dangerouslySetInnerHTML={{ __html: formatLegalExperts(perplexityResponse.choices[0].message.content) }} /> : 
+        sentRequest ?
         <Box id="loading-icon">
           <CircularProgress />
-        </Box>
+        </Box> :
+        <Typography className="no-response-placeholder" variant="h5">
+            Input a topic above.
+        </Typography>
       }
     </Container>
   )

@@ -18,3 +18,13 @@
     margin: auto;
     margin-top: 50px;
 }
+
+.response {
+    text-align: left;
+    margin-bottom: 30px;
+}
+
+.no-response-placeholder {
+    margin-top: 20px;
+    color: gray;
+}
