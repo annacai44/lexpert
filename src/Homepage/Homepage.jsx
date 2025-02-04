@@ -9,7 +9,7 @@ function Homepage() {
   const [perplexityResponse, setPerplexityResponse] = useState(null);
 
   const systemMessage = "Be precise and concise. The more information you provide, the better the results.";
-  const userRequest = `Find me legal experts on ${topic}`;
+  const userRequest = `Find me legal experts on ${topic}. Provide the person's position, expertise, and perspective. Number each person.`;
 
   const sendRequest = async () => {
       try {
