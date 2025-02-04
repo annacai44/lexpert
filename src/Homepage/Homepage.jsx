@@ -1,15 +1,26 @@
 import React, { useState } from 'react';
-import { Container, TextField, Button, Typography, CircularProgress, Box } from '@mui/material';
+import { Container, TextField, Button, Typography, CircularProgress, Box, Select, MenuItem, FormControl, InputLabel, } from '@mui/material';
 import "./Homepage.css";
 import axios from "axios";
 
+function formatLegalExperts(text) {
+  return text
+      .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>") // Bold formatting
+      .replace(/(\d+)\.\s+<strong>(.*?)<\/strong>/g, "<br><br><strong>$1. $2</strong>") // Numbered list spacing
+      .replace(/- \*\*(.*?)\*\*/g, "<br>- <strong>$1</strong>") // Bold within bullet points
+      .replace(/\s*-\s+/g, "<br>- ") // Ensure bullet points are on new lines
+      .trim();
+}
 
 function Homepage() {
   const [topic, setTopic] = useState("");
   const [perplexityResponse, setPerplexityResponse] = useState(null);
-
+  const [location, setLocation] = useState("");
+  const [specialization, setSpecialization] = useState("");
+  const [university, setUniversity] = useState("");
+  
   const systemMessage = "Be precise and concise. The more information you provide, the better the results.";
-  const userRequest = `Find me legal experts on ${topic}. Provide the person's position, expertise, and perspective. Number each person.`;
+  const userRequest = `Find me legal experts on ${topic}. Provide the person's position, description, expertise, and perspective. Number each person.`;
 
   const sendRequest = async () => {
       try {
@@ -41,6 +52,49 @@ function Homepage() {
           Find me legal experts on...
         </Typography>
 
+        {/* <FormControl fullWidth>
+          <InputLabel>Location</InputLabel>
+          <Select
+            value={location}
+            onChange={(event) => setLocation(event.target.value)}
+            label="Location"
+          >
+            <MenuItem value="Illinois">Illinois</MenuItem>
+            <MenuItem value="New York">New York</MenuItem>
+            <MenuItem value="California">California</MenuItem>
+            <MenuItem value="Texas">Texas</MenuItem>
+          </Select>
+        </FormControl>
+
+        <FormControl fullWidth>
+          <InputLabel>Specialization</InputLabel>
+          <Select
+            value={specialization}
+            onChange={(event) => setSpecialization(event.target.value)}
+            label="Specialization"
+          >
+            <MenuItem value="Constitutional Law">Constitutional Law</MenuItem>
+            <MenuItem value="Intellectual Property">Intellectual Property</MenuItem>
+            <MenuItem value="Criminal Law">Criminal Law</MenuItem>
+            <MenuItem value="Corporate Law">Corporate Law</MenuItem>
+          </Select>
+        </FormControl>
+
+        <FormControl fullWidth>
+          <InputLabel>University</InputLabel>
+          <Select
+            value={university}
+            onChange={(event) => setUniversity(event.target.value)}
+            label="University"
+          >
+            <MenuItem value="Northwestern University">Northwestern University</MenuItem>
+            <MenuItem value="Harvard University">Harvard University</MenuItem>
+            <MenuItem value="Yale University">Yale University</MenuItem>
+            <MenuItem value="Stanford University">Stanford University</MenuItem>
+            <MenuItem value="Columbia University">Columbia University</MenuItem>
+          </Select>
+        </FormControl> */}
+        
         <div id="issue-textfield">
           <TextField
             fullWidth
@@ -58,7 +112,7 @@ function Homepage() {
       </Typography>
 
       {perplexityResponse ? 
-        <Typography variant="h5" id="response-text">{perplexityResponse.choices[0].message.content}</Typography> : 
+        <Typography variant="h5" id="response-text">{formatLegalExperts(perplexityResponse.choices[0].message.content)}</Typography> : 
         <Box id="loading-icon">
           <CircularProgress />
         </Box>
