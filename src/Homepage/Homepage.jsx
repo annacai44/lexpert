@@ -2,15 +2,7 @@ import React, { useState } from 'react';
 import { Container, TextField, Button, Typography, CircularProgress, Box, Select, MenuItem, FormControl, InputLabel, } from '@mui/material';
 import "./Homepage.css";
 import axios from "axios";
-
-function formatLegalExperts(text) {
-  return text
-      .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>") // Bold formatting
-      .replace(/(\d+)\.\s+<strong>(.*?)<\/strong>/g, "<br><br><strong>$1. $2</strong>") // Numbered list spacing
-      .replace(/- \*\*(.*?)\*\*/g, "<br>- <strong>$1</strong>") // Bold within bullet points
-      .replace(/\s*-\s+/g, "<br>- ") // Ensure bullet points are on new lines
-      .trim();
-}
+import ReactMarkdown from 'react-markdown';
 
 function Homepage() {
   const [topic, setTopic] = useState("");
@@ -114,7 +106,7 @@ function Homepage() {
       </Typography>
 
       {perplexityResponse ? 
-        <div className="response" dangerouslySetInnerHTML={{ __html: formatLegalExperts(perplexityResponse.choices[0].message.content) }} /> : 
+      <ReactMarkdown className="response">{perplexityResponse.choices[0].message.content}</ReactMarkdown>: 
         sentRequest ?
         <Box id="loading-icon">
           <CircularProgress />
