@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Container, TextField, Button, Typography, CircularProgress, Box } from '@mui/material';
 import "./Homepage.css";
 import axios from "axios";
@@ -11,20 +11,16 @@ function Homepage() {
   const [authorNames, setAuthorNames] = useState([]);
   
   const systemMessage = "Be precise and concise. The more information you provide, the better the results.";
-  const userRequest = `Find me legal experts on ${topic}. Provide the person's position, description, expertise indented. Number each person. Only include people who are alive today. Do not output any other text other than the info above!`;
+  const userRequest = `Here is a list of people who wrote papers related to ${topic}: ${authorNames}. For each author, provide the person's position, expertise, and contact information found from any professional sites. Number each person. Only include people who are alive or not retired today. For each person, provide a 1 paragraph summary on why they are a good expert on ${topic} based on papers they've written from Google Scholar or other pieces of their work. Give citations in the summary paragraph linking to specific papers they've written from Google Scholar.`;
 
   const getAuthors = async (topic) => {
     try {
       const response = await axios.get(`http://localhost:5002/api/getFirstAuthors?query=${topic}`);
-      setAuthorNames(response.data);
+      setAuthorNames(response.data.map(author => author.name));
     } catch (error) {
-      // Log the full error details
       if (error.response) {
-        // The request was made and the server responded with a status code
-        // that falls out of the range of 2xx
         console.error('Response error:', error.response.data);
         console.error('Response status:', error.response.status);
-        console.error('Response headers:', error.response.headers);
       } else if (error.request) {
         // The request was made but no response was received
         console.error('Request error:', error.request);
@@ -35,8 +31,13 @@ function Homepage() {
     }
   };
 
-  console.log("author names:", authorNames);
-  const sendRequest = async () => {
+  useEffect(() => {
+    if (authorNames.length > 0) {
+      sendPerplexityRequest();
+    }
+  }, [authorNames]);
+
+  const sendPerplexityRequest = async () => {
     setSentRequest(true);
       try {
         console.log(userRequest);
