@@ -8,7 +8,7 @@ function App() {
       <AppBar position="static">
         <Toolbar>
           <Typography variant="h4" component="div" sx={{ flexGrow: 1 }}>
-            Lexpert
+            ExpertLink
           </Typography>
         </Toolbar>
       </AppBar>

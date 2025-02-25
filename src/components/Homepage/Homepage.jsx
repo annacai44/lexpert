@@ -31,6 +31,7 @@ function Homepage() {
     }
   };
 
+  console.log(authorNames);
   useEffect(() => {
     if (authorNames.length > 0) {
       sendPerplexityRequest();
@@ -77,7 +78,7 @@ function Homepage() {
             onChange={handleChange}
           />
         </div>
-        <Button onClick={() => getAuthors(topic)} id="legal-expert-button" variant="contained">Find a legal expert!</Button>
+        <Button onClick={() => getAuthors(topic)} id="expert-button" variant="contained">Find an expert!</Button>
       </div>
 
       <Typography variant="h2">
