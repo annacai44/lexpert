@@ -8,7 +8,7 @@ import EmailButton from '../EmailButton/EmailButton';
 function Homepage() {
   const [topic, setTopic] = useState("");
   const [OpenAIResponse, setOpenAIResponse] = useState(null);
-  const [sentRequest, setSentRequest] = useState(false);
+  const [waitingForAPIResponse, setWaitingForAPIResponse] = useState(false);
   const [authorNames, setAuthorNames] = useState([]);
   
   const systemMessage = "Be precise and concise. The more information you provide, the better the results.";
@@ -20,6 +20,7 @@ function Homepage() {
   information on the author. If there is no information on the author, do not include them in the list.`;
 
   const getAuthors = async (topic) => {
+    setWaitingForAPIResponse(true);
     try {
       const response = await axios.get(`http://localhost:5002/api/getFirstAuthors?query=${topic}`);
       setAuthorNames(response.data);
@@ -65,7 +66,6 @@ function Homepage() {
   
 
   const sendOpenAIRequest = async () => {
-    setSentRequest(true);
     const formattedNames = formatAuthorNames();
     const formattedNamesAndPapers = formatAuthorNamesAndPapers();
 
@@ -140,6 +140,7 @@ ${formattedNamesAndPapers}
       });
   
       setOpenAIResponse(response.data);
+      setWaitingForAPIResponse(false);
     } catch (error) {
       console.error(error);
     }
@@ -175,9 +176,9 @@ ${formattedNamesAndPapers}
           Results
       </Typography>
 
-      {OpenAIResponse ? 
+      {OpenAIResponse && !waitingForAPIResponse ? 
       <ReactMarkdown className="response">{OpenAIResponse.choices[0].message.content}</ReactMarkdown>: 
-        sentRequest ?
+        waitingForAPIResponse ?
         <Box id="loading-icon">
           <CircularProgress />
         </Box> :
