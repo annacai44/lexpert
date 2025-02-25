@@ -7,11 +7,24 @@ require('dotenv').config();
 const app = express();
 const port = 5002;
 
+
+// Serve React build files
+const path = require('path');
+
+// If you're serving a React app after building it
+app.use(express.static(path.join(__dirname, 'build')));
+
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'build', 'index.html'));
+});
+
+
 app.use(cors());
 app.use(express.json());
 
 const API_URL = "https://api.openai.com/v1/chat/completions";
 const API_KEY = process.env.REACT_APP_API_KEY;
+console.log("OpenAI API Key Loaded:", !!API_KEY);  // Should print true
 
 // Define route to fetch first authors based on search query
 app.get('/api/getFirstAuthors', async (req, res) => {

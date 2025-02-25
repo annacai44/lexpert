@@ -34,7 +34,7 @@ const axios = require('axios');
 const cheerio = require('cheerio');
 
 // Function to get authors and URLs by topic
-async function getFirstAuthors(topic, maxPages = 5) {
+async function getFirstAuthors(topic, maxPages = 1) {
     const authorsDict = {}; // Store authors and their article URLs
 
     // Loop through pages
