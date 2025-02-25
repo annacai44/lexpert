@@ -3,20 +3,26 @@ import { Container, TextField, Button, Typography, CircularProgress, Box } from 
 import "./Homepage.css";
 import axios from "axios";
 import ReactMarkdown from 'react-markdown';
+import EmailButton from '../EmailButton/EmailButton';
 
 function Homepage() {
   const [topic, setTopic] = useState("");
-  const [perplexityResponse, setPerplexityResponse] = useState(null);
+  const [OpenAIResponse, setOpenAIResponse] = useState(null);
   const [sentRequest, setSentRequest] = useState(false);
   const [authorNames, setAuthorNames] = useState([]);
   
   const systemMessage = "Be precise and concise. The more information you provide, the better the results.";
-  const userRequest = `Here is a list of people who wrote papers related to ${topic}: ${authorNames}. For each author, provide the person's position, expertise, and contact information found from any professional sites. Number each person. Only include people who are alive or not retired today. For each person, provide a 1 paragraph summary on why they are a good expert on ${topic} based on papers they've written from Google Scholar or other pieces of their work. Give citations in the summary paragraph linking to specific papers they've written from Google Scholar.`;
+  const userRequest = `Here is a list of people who wrote papers related to ${topic}: ${authorNames}. For each author, 
+  provide the author's full name in bold, then under their name, list their position, expertise, and email. For each author, 
+  also provide a 1 paragraph summary on why they are a good expert on ${topic} based on papers 
+  they've written from Google Scholar or other pieces of their work, and label this as Background. Number each person. Only include 
+  people who are alive or not retired today. Do not include anything else except for the list! Do not say that there was unsufficient 
+  information on the author. If there is no information on the author, do not include them in the list.`;
 
   const getAuthors = async (topic) => {
     try {
       const response = await axios.get(`http://localhost:5002/api/getFirstAuthors?query=${topic}`);
-      setAuthorNames(response.data.map(author => author.name));
+      setAuthorNames(response.data);
     } catch (error) {
       if (error.response) {
         console.error('Response error:', error.response.data);
@@ -31,32 +37,34 @@ function Homepage() {
     }
   };
 
-  console.log(authorNames);
+  console.log("userRequest:", userRequest);
+  console.log("author names:", authorNames);
   useEffect(() => {
     if (authorNames.length > 0) {
-      sendPerplexityRequest();
+      sendOpenAIRequest();
     }
   }, [authorNames]);
 
-  const sendPerplexityRequest = async () => {
+  const sendOpenAIRequest = async () => {
     setSentRequest(true);
       try {
         console.log(userRequest);
           const response = await axios.post("http://localhost:5002/api/chat", {
-              model: "sonar",
+              model: "gpt-4o",
               messages: [
-                  { role: "system", content: systemMessage },
                   { role: "user", content: userRequest }
               ],
               max_tokens: 4096,
               temperature: 0.7
           });
 
-          setPerplexityResponse(response.data);
+          setOpenAIResponse(response.data);
       } catch (error) {
           console.error(error);
       }
   };
+
+  console.log("openAI response:", OpenAIResponse);
 
   const handleChange = (event) => {
     setTopic(event.target.value);
@@ -85,8 +93,8 @@ function Homepage() {
           Results
       </Typography>
 
-      {perplexityResponse ? 
-      <ReactMarkdown className="response">{perplexityResponse.choices[0].message.content}</ReactMarkdown>: 
+      {OpenAIResponse ? 
+      <ReactMarkdown className="response">{OpenAIResponse.choices[0].message.content}</ReactMarkdown>: 
         sentRequest ?
         <Box id="loading-icon">
           <CircularProgress />
