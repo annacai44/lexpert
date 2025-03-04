@@ -7,17 +7,10 @@ import EmailButton from '../EmailButton/EmailButton';
 
 function Homepage() {
   const [topic, setTopic] = useState("");
-  const [OpenAIResponse, setOpenAIResponse] = useState(null);
+  const [openAIResponse, setOpenAIResponse] = useState(null);
   const [waitingForAPIResponse, setWaitingForAPIResponse] = useState(false);
   const [authorNames, setAuthorNames] = useState([]);
-  
-  const systemMessage = "Be precise and concise. The more information you provide, the better the results.";
-  const userRequest = `Here is a list of people who wrote papers related to ${topic}: ${authorNames}. For each author, 
-  provide the author's full name in bold, then under their name, list their position, expertise, and email. For each author, 
-  also provide a 1 paragraph summary on why they are a good expert on ${topic} based on papers 
-  they've written from Google Scholar or other pieces of their work, and label this as Background. Number each person. Only include 
-  people who are alive or not retired today. Do not include anything else except for the list! Do not say that there was unsufficient 
-  information on the author. If there is no information on the author, do not include them in the list.`;
+  const [filterRequest, setFilterRequest] = useState("");
 
   const getAuthors = async (topic) => {
     setWaitingForAPIResponse(true);
@@ -38,21 +31,11 @@ function Homepage() {
     }
   };
 
-  console.log("userRequest:", userRequest);
-  console.log("author names:", authorNames);
   useEffect(() => {
     if (authorNames && Object.keys(authorNames).length > 0) {
-      sendOpenAIRequest();
+      sendFirstOpenAIRequest();
     }
   }, [authorNames]);  
-
-  const formatAuthorNames = () => {
-    if (authorNames) {
-      return Object.keys(authorNames).map(name => `${name}`).join(", ");
-    }
-    return "";
-  }
-
 
   const formatAuthorNamesAndPapers = () => {
     if (authorNames) {
@@ -63,81 +46,28 @@ function Homepage() {
     return "";
   }
   
-  
-
-  const sendOpenAIRequest = async () => {
-    const formattedNames = formatAuthorNames();
+  const sendFirstOpenAIRequest = async () => {
     const formattedNamesAndPapers = formatAuthorNamesAndPapers();
 
-    // const newUserRequest = `Here is a list of people who wrote papers related to ${topic}: ${formattedNames}. For each author, 
-    // provide the author's full name in bold, then under their name, list their position, expertise, and email. For each author, 
-    // also provide a 1 paragraph summary on why they are a good expert on ${topic} based on papers 
-    // they've written from Google Scholar or other pieces of their work, and label this as Background. Number each person. Only include 
-    // people who are alive or not retired today. Do not include anything else except for the list! Do not say that there was insufficient 
-    // information on the author. If there is no information on the author, do not include them in the list.`;
+    const newUserRequest = `Here is a list of people who wrote papers related to ${topic}. 
+    Using the collected papers from Google Scholar and other online sources, provide the following for each author: 
+    - Full name in bold. 
+    - Position (bolded) (e.g., university).
+    - Expertise (bolded) (field of study, etc).
+    - Background (bolded, labeled as 'Background.) summary explaining why they are a credible expert on ${topic}, and 
+    also summarize (be specific) their papers attached and anything else you find out online about their work on this topic.' 
+    - Only include people who are alive and active today.
+    - Links (bolded) to their works and any other works you find yourself
+    - Do not include anything else. If no information is available for an author, exclude them from the list.
 
-    // const newUserRequest = `Here is a list of people who wrote papers related to ${topic}: ${formattedNames}. Provide brief information about each author.`;
-    
-//     const newUserRequest = `Here is a list of people who wrote papers related to ${topic}: ${formattedNames}. Using the collected papers from Google Scholar and other online sources, provide the following for each author: 
-// - Full name in bold. 
-// - Position and expertise (e.g., university
-// - expertise (field of study, etc). 
-// - 1 paragraph summary explaining why they are a credible expert on ${topic}, labeled as 'Background.' 
-// - Only include people who are alive and active today. 
-// - Do not include anything else. If no information is available for an author, exclude them from the list.`;
+    Here are the authors and their papers. If we get authors from the same paper only return the first author:
+    ${formattedNamesAndPapers}
+    `;
 
-// const newUserRequest = `Here is a list of people who wrote papers related to ${topic}. 
-// Using the collected papers from Google Scholar and other online sources, provide the following for each author: 
-// - Full name in bold. 
-// - Position (bolded) (e.g., university).
-// - Expertise (bolded) (field of study, etc).
-// - Background (bolded) 1 paragraph summary explaining why they are a credible expert on ${topic}, labeled as 'Background.' 
-// - Only include people who are alive and active today.
-// - Links (bolded) to their works and any other works you find yourself
-// - Contact Information (bolded) contact information you can find from their schools websites which is public.
-// - Do not include anything else. If no information is available for an author, exclude them from the list.
-
-// Here are the authors and their papers: 
-// ${formattedNamesAndPapers}
-// `;
-
-  const newUserRequest = `Here is a list of people who wrote papers related to ${topic}. 
-Using the collected papers from Google Scholar and other online sources, provide the following for each author: 
-- Full name in bold. 
-- Position (bolded) (e.g., university).
-- Expertise (bolded) (field of study, etc).
-- Background (bolded) 1 paragraph summary explaining why they are a credible expert on ${topic}, labeled as 'Background.' 
-- Only include people who are alive and active today.
-- Links (bolded) to their works and any other works you find yourself
-- Contact Information (bolded) contact information (phone, email, address) you can find from their schools websites which is public.
-- Do not include anything else. If no information is available for an author, exclude them from the list.
-
-Here are the authors and their papers: 
-${formattedNamesAndPapers}
-`;
-
-
-
-    console.log("Executing OpenAI request...");
-    console.log("Request Body:", {
-      model: "gpt-4",
-      messages: [
-        { role: "user", content: newUserRequest }
-      ],
-      max_tokens: 4096,
-      temperature: 0.7
-    });
-  
     try {
       console.log(newUserRequest);
-      const response = await axios.post("http://localhost:5002/api/chat", {
-        model: "gpt-4",
-        messages: [
-          { role: "user", content: newUserRequest }
-        ],
-        max_tokens: 4096,
-        temperature: 0.7
-      });
+
+      const response = await axios.post("http://localhost:5002/api/chat", {message: newUserRequest });
   
       setOpenAIResponse(response.data);
       setWaitingForAPIResponse(false);
@@ -145,12 +75,25 @@ ${formattedNamesAndPapers}
       console.error(error);
     }
   };
-  
 
-  console.log("openAI response:", OpenAIResponse);
+  const sendSubsequentOpenAIRequests = async () => {
+    try {
+      console.log("filter request:", filterRequest);
+      const response = await axios.post("http://localhost:5002/api/chat", {message: filterRequest });
+      setOpenAIResponse(response.data);
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
+  console.log("openAI response:", openAIResponse);
 
   const handleChange = (event) => {
     setTopic(event.target.value);
+  }
+
+  const handleFilterRequest = (event) => {
+    setFilterRequest(event.target.value);
   }
 
   return (
@@ -176,8 +119,21 @@ ${formattedNamesAndPapers}
           Results
       </Typography>
 
-      {OpenAIResponse && !waitingForAPIResponse ? 
-      <ReactMarkdown className="response">{OpenAIResponse.choices[0].message.content}</ReactMarkdown>: 
+      {openAIResponse && !waitingForAPIResponse ? 
+      <div className="filter-input-box">
+        <div className="filter-input-box">
+          <TextField
+              fullWidth
+              placeholder="Narrow down results here. For example, 'I only want experts from Northwestern University.'"
+              multiline
+              rows={2}
+              onChange={handleFilterRequest}
+          />
+          <Button onClick={sendSubsequentOpenAIRequests} id="expert-button" variant="contained">Update results</Button>
+        </div>
+        <ReactMarkdown className="response">{openAIResponse}</ReactMarkdown>
+      </div>
+    : 
         waitingForAPIResponse ?
         <Box id="loading-icon">
           <CircularProgress />
