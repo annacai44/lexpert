@@ -10,36 +10,31 @@ import {
 import "./Homepage.css";
 import axios from "axios";
 import ReactMarkdown from "react-markdown";
-import EmailButton from "../EmailButton/EmailButton";
 import ExpertNames from "../ExpertNames";
 
 function Homepage() {
   const [topic, setTopic] = useState("");
   const [openAIResponse, setOpenAIResponse] = useState(null);
-  const [authorNames, setAuthorNames] = useState([]);
+
+  // {author name: [list of article links]}
+  const [authorNames, setAuthorNames] = useState({});
   const [filterRequest, setFilterRequest] = useState("");
   const [queryingAuthors, setQueryingAuthors] = useState(false);
   const [findingInfoOnExperts, setFindingInfoOnExperts] = useState(false);
   const [showAuthorNames, setShowAuthorNames] = useState(false);
+  const [sentFilterRequest, setSentFilterRequest] = useState(false);
 
   const getAuthors = async (topic) => {
+    setOpenAIResponse(false);
+    setQueryingAuthors(true);
     try {
-      setQueryingAuthors(true);
       const response = await axios.get(
         `http://localhost:5002/api/getFirstAuthors?query=${topic}`
       );
+      console.log("author names:", response.data);
       setAuthorNames(response.data);
     } catch (error) {
-      if (error.response) {
-        console.error("Response error:", error.response.data);
-        console.error("Response status:", error.response.status);
-      } else if (error.request) {
-        // The request was made but no response was received
-        console.error("Request error:", error.request);
-      } else {
-        // Something happened in setting up the request that triggered an Error
-        console.error("Error message:", error.message);
-      }
+      console.error(error);
     }
   };
 
@@ -79,13 +74,18 @@ function Homepage() {
     - Links (bolded) to their works and any other works you find yourself (make sure the hyperlink shows the title of the work)
     - Do not include anything else. If no information is available for an author, exclude them from the list.
 
-    Here are the authors and their papers. If we get authors from the same paper only return the first author:
+    Provide the information for each author. If you leave any authors off of your final output, explain why they were left off. 
+
+    Here are the authors and their papers:
     ${formattedNamesAndPapers}
     `;
+
+    console.log("prompt sent to chatgpt:\n", newUserRequest);
 
     try {
       const response = await axios.post("http://localhost:5002/api/chat", {
         message: newUserRequest,
+        firstRequest: true,
       });
 
       setOpenAIResponse(response.data);
@@ -96,9 +96,11 @@ function Homepage() {
   };
 
   const sendSubsequentOpenAIRequests = async () => {
+    setSentFilterRequest(false);
     try {
       const response = await axios.post("http://localhost:5002/api/chat", {
         message: filterRequest,
+        firstRequest: false
       });
       setOpenAIResponse(response.data);
     } catch (error) {

@@ -23,7 +23,7 @@ app.use(cors());
 app.use(express.json());
 
 // Store conversations in memory (use a database for production)
-const userSessions = [];
+let userSessions;
 
 const API_KEY = process.env.REACT_APP_API_KEY;
 console.log("OpenAI API Key Loaded:", !!API_KEY);  // Should print true
@@ -48,13 +48,15 @@ app.get('/api/getFirstAuthors', async (req, res) => {
 });
 
 app.post("/api/chat", async (req, res) => {
-    const { message } = req.body;
+    const { message, firstRequest } = req.body;
 
     if (!message) {
         return res.status(400).json({ error: "Missing or message" });
     }
 
-    if (userSessions.length === 0) {
+    // clear out all previous messages when entering in a new topic
+    if (firstRequest) {
+        userSessions = [];
         userSessions.push({ role: "system", content: "You are a helpful assistant." });
     }
 

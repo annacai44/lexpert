@@ -1,41 +1,10 @@
-// const puppeteer = require('puppeteer');
-
-// async function getFirstAuthors(query) {
-//     const browser = await puppeteer.launch({ headless: true });
-//     const page = await browser.newPage();
-
-//     await page.goto(`https://scholar.google.com/scholar?q=${encodeURIComponent(query)}`);
-//     await page.waitForSelector('.gs_ri');
-
-//     const results = await page.evaluate(() => {
-//         const papers = [];
-//         const items = document.querySelectorAll('.gs_ri');
-
-//         items.forEach(item => {
-//             const authorsText = item.querySelector('.gs_a') ? item.querySelector('.gs_a').textContent : '';
-//             const firstAuthor = authorsText.split(',')[0].split(/\s*-\s*/)[0].trim();
-//             papers.push({ name: firstAuthor });
-//           });
-
-//         return papers;
-//     });
-
-//     await browser.close();
-
-//     return results;
-// }
-
-// module.exports = { getFirstAuthors };
-
-
-
-
 const axios = require('axios');
 const cheerio = require('cheerio');
 
 // Function to get authors and URLs by topic
 async function getFirstAuthors(topic, maxPages = 1) {
     const authorsDict = {}; // Store authors and their article URLs
+    let authorsCount = 0; // Track the number of unique authors
 
     // Loop through pages
     for (let page = 0; page < maxPages * 10; page += 10) {
@@ -60,10 +29,11 @@ async function getFirstAuthors(topic, maxPages = 1) {
                 break;
             }
 
-            articles.each((i, article) => {
+            for (let i = 0; i < articles.length; i++) {
+                const article = articles[i];
                 // Get citation information
                 const citationInfo = $(article).find(".gs_a").text();
-                if (!citationInfo) return;
+                if (!citationInfo) continue;
 
                 // Extract the year and check if it's after 1970
                 const yearMatch = citationInfo.match(/\b(19[7-9]\d|20[0-2]\d)\b/);
@@ -85,10 +55,27 @@ async function getFirstAuthors(topic, maxPages = 1) {
                             } else {
                                 authorsDict[cleanedName] = new Set([articleUrl]);
                             }
+
+                            // Increment authors count and break if limit is reached
+                            authorsCount++;
+                            if (authorsCount >= 10) {
+                                // Return early to stop the loop
+                                return;
+                            }
                         }
                     });
                 }
-            });
+
+                // Exit loop early if we've collected 10 authors
+                if (authorsCount >= 10) {
+                    break;
+                }
+            }
+
+            // If we reached 10 authors, exit the outer loop as well
+            if (authorsCount >= 10) {
+                break;
+            }
 
             // Delay between requests to avoid IP blocking (2 seconds)
             await new Promise(resolve => setTimeout(resolve, 2000));
@@ -107,7 +94,5 @@ async function getFirstAuthors(topic, maxPages = 1) {
 
     return formattedResult;
 }
-
-
 
 module.exports = { getFirstAuthors };
