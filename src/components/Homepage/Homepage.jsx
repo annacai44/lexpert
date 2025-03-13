@@ -141,11 +141,10 @@ function Homepage() {
         </Button>
       </div>
 
-      <Typography variant="h2">Results</Typography>
-
       <div className="results-box">
         {openAIResponse ? (
           <div className="filter-input-box">
+            <Typography variant="h2">Results</Typography>
             <div className="filter-input-box">
               <TextField
                 fullWidth
@@ -189,11 +188,7 @@ function Homepage() {
               <CircularProgress />
             </Box>
           </div>
-        ) : (
-          <Typography className="placeholder-text" variant="h5">
-            Input a topic above.
-          </Typography>
-        )}
+        ) : null}
       </div>
     </Container>
   );
