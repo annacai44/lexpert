@@ -96,7 +96,7 @@ function Homepage() {
   };
 
   const sendSubsequentOpenAIRequests = async () => {
-    setSentFilterRequest(false);
+    setSentFilterRequest(true);
     try {
       const response = await axios.post("http://localhost:5002/api/chat", {
         message: filterRequest,
@@ -105,6 +105,8 @@ function Homepage() {
       setOpenAIResponse(response.data);
     } catch (error) {
       console.error(error);
+    } finally {
+      setSentFilterRequest(false); // Hide loading icon after response
     }
   };
 
@@ -159,6 +161,11 @@ function Homepage() {
               >
                 Update results
               </Button>
+              {sentFilterRequest && (
+                <Box className="loading-icon">
+                  <CircularProgress />
+                </Box>
+              )}
             </div>
             <ReactMarkdown className="response">{openAIResponse}</ReactMarkdown>
           </div>
