@@ -160,7 +160,9 @@ function Homepage() {
                 Update results
               </Button>
             </div>
-            <ReactMarkdown className="response">{openAIResponse}</ReactMarkdown>
+            <ReactMarkdown className="response">
+              {openAIResponse?.response ? openAIResponse.response : "No response available"}
+            </ReactMarkdown>
           </div>
         ) : queryingAuthors ? (
           <div className="loading">
