@@ -23,6 +23,7 @@ function Homepage() {
   const [findingInfoOnExperts, setFindingInfoOnExperts] = useState(false);
   const [showAuthorNames, setShowAuthorNames] = useState(false);
   const [sentFilterRequest, setSentFilterRequest] = useState(false);
+  const [finishedCollectingAuthorInfo, setFinishedCollectingAuthorInfo] = useState(false);
 
   const getAuthors = async (topic) => {
     setOpenAIResponse(false);
@@ -100,6 +101,7 @@ function Homepage() {
     }
 
     setFindingInfoOnExperts(false);
+    setFinishedCollectingAuthorInfo(true);
   };
 
   const sendSubsequentOpenAIRequests = async () => {
@@ -174,6 +176,11 @@ function Homepage() {
               )}
             </div>
             <ReactMarkdown className="response">{openAIResponse}</ReactMarkdown>
+            {!finishedCollectingAuthorInfo && (
+              <Box className="loading-icon">
+                <CircularProgress />
+              </Box>
+            )}
           </div>
         ) : queryingAuthors ? (
           <div className="loading">
