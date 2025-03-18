@@ -66,16 +66,22 @@ function Homepage() {
     let combinedResponse = "";
 
     const initialPrompt = `You will receive a list of experts and their papers related to the topic ${topic}.  
-    Your task is to format their information consistently and concisely.  
-    Use the following structure for each expert:  
-  
-    - **Full Name** at the top in bold  
+    Your task is to format their information consistently and concisely. If you notice the same expert twice because of abbreviations, make sure you only use one of them!
+    Use the following structure for each expert (FULL NAME):  
+
     - **Position** (university, organization)  
     - **Expertise** (field of study, research area)  
-    - **Background** (why they are credible, based on papers and other sources)  
-    - **Links** (hyperlinks to their works and related research, make sure the hyperlink is ONLY the TITLE of the paper)  
+    - **Background** (why they are credible, based on papers and other sources), 2-4 sentences.
+    - **Links** (hyperlinks to their works and related research, make sure the hyperlink is ONLY the TITLE of the paper).
   
-    Only include experts who are alive and active today. Only list each expert once. A list of experts and their papers will follow.`;
+    Only include experts who are alive and active today. A list of experts and their papers will follow.
+    
+    Exmaple Format:::::
+    Gene Grossman
+      - Position: Professor of Economics, Princeton University
+      - Expertise: International Trade and Political Economy
+      - Background: Professor GM Grossman is a prolific author in the field of economics, especially where it pertains to international trade and political economy. His accolades include his renowned article on 'Trade Wars and Trade Talks' which details the role of domestic politics in the negotiation of international trade agreements and the resulting potential for trade wars.
+      - Links: Trade Wars and Trade Talks`;
   
     try {
       await axios.post("http://localhost:5002/api/chat", {

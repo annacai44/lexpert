@@ -37,7 +37,7 @@ app.post('/api/getFirstAuthors', async (req, res) => {
         const authors = await getFirstAuthors(topic);
 
         const systemPrompt = `Given the following dictionary of authors and their associated research papers sourced from Google Scholar 
-        on a specific topic, return only the top 5 authors who are considered experts in that topic. Base your selection on factors 
+        on a specific topic, return only the top 5 authors who are considered experts in that topic (If you notice the same expert twice because of abbreviations, make sure you only use one of them!). Base your selection on factors 
         such as citation impact, publication quality, and relevance to the topic. Additionally, prioritize experts that align with 
         the user's background to ensure relevance. The user background is: "${userBackground}". Return only a dictionary in the same format, 
         without any explanations or additional text.`;
