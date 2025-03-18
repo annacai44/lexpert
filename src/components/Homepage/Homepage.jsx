@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Container,
   TextField,
@@ -15,6 +15,7 @@ import ExpertNames from "../ExpertNames";
 function Homepage() {
   const [topic, setTopic] = useState("");
   const [openAIResponse, setOpenAIResponse] = useState(null);
+  const resultsRef = useRef(null);
 
   // {author name: [list of article links]}
   const [authorNames, setAuthorNames] = useState({});
@@ -24,13 +25,16 @@ function Homepage() {
   const [showAuthorNames, setShowAuthorNames] = useState(false);
   const [sentFilterRequest, setSentFilterRequest] = useState(false);
   const [finishedCollectingAuthorInfo, setFinishedCollectingAuthorInfo] = useState(false);
+  const [userBackground, setUserBackground] = useState("");
 
-  const getAuthors = async (topic) => {
+  const getAuthors = async () => {
     setOpenAIResponse(false);
     setQueryingAuthors(true);
+    setFinishedCollectingAuthorInfo(false);
     try {
-      const response = await axios.get(
-        `http://localhost:5002/api/getFirstAuthors?query=${topic}`
+      const response = await axios.post(
+        "http://localhost:5002/api/getFirstAuthors",
+        {topic, userBackground}
       );
       console.log("author names:", response.data);
       setAuthorNames(response.data);
@@ -52,6 +56,12 @@ function Homepage() {
     }
   }, [authorNames]);
 
+  useEffect(() => {
+    if (resultsRef.current) {
+      resultsRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [openAIResponse]);
+
   const sendFirstOpenAIRequest = async () => {
     let combinedResponse = "";
 
@@ -63,7 +73,7 @@ function Homepage() {
     - **Position** (university, organization)  
     - **Expertise** (field of study, research area)  
     - **Background** (why they are credible, based on papers and other sources)  
-    - **Links** (hyperlinks to their works and related research)  
+    - **Links** (hyperlinks to their works and related research, make sure the hyperlink is ONLY the TITLE of the paper)  
   
     Only include experts who are alive and active today. A list of experts and their papers will follow.`;
   
@@ -119,8 +129,12 @@ function Homepage() {
     }
   };
 
-  const handleChange = (event) => {
+  const updateTopic = (event) => {
     setTopic(event.target.value);
+  };
+
+  const updateUserBackground = (event) => {
+    setUserBackground(event.target.value);
   };
 
   const handleFilterRequest = (event) => {
@@ -130,15 +144,25 @@ function Homepage() {
   return (
     <Container maxWidth="md">
       <div className="input-area">
-        <Typography variant="h2">Find me experts on...</Typography>
-
-        <div id="issue-textfield">
+        <div className="issue-textfield">
+          <Typography className="input-question" variant="h3">What's your background?</Typography>
           <TextField
             fullWidth
-            placeholder="Enter in a topic. e.g. Marbury vs. Madison decision."
+            placeholder="Describe your background and purpose. e.g., 'I'm a journalist for The New York Times covering trade policy' or 'I'm a researcher studying AI ethics.'"
             multiline
-            rows={4}
-            onChange={handleChange}
+            rows={3}
+            onChange={updateUserBackground}
+          />
+        </div>
+
+        <div className="issue-textfield">
+          <Typography className="input-question" variant="h3">I need to find experts on...</Typography>
+          <TextField
+            fullWidth
+            placeholder="Enter in a topic. e.g., 'Marbury vs. Madison decision'."
+            multiline
+            rows={3}
+            onChange={updateTopic}
           />
         </div>
         <Button
@@ -153,7 +177,7 @@ function Homepage() {
       <div className="results-box">
         {openAIResponse ? (
           <div className="filter-input-box">
-            <Typography variant="h2">Results</Typography>
+            <Typography variant="h3">Results</Typography>
             <div className="filter-input-box">
               <TextField
                 fullWidth
@@ -203,6 +227,8 @@ function Homepage() {
             </Box>
           </div>
         ) : null}
+
+        <div ref={resultsRef} />
       </div>
     </Container>
   );

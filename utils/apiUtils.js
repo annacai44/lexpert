@@ -40,7 +40,7 @@ async function getFirstAuthors(topic, maxPages = 3) {
                 if (!citationInfo) continue;
 
                 // Extract the first author (before the first comma or hyphen)
-                const firstAuthor = citationInfo.split(",")[0].split(" - ")[0].trim();
+                const firstAuthor = citationInfo.match(/^[^,-]+/)[0].trim();
 
                 // Extract article link
                 const titleTag = $(article).find(".gs_rt a");
@@ -51,14 +51,14 @@ async function getFirstAuthors(topic, maxPages = 3) {
                     authorsDict[firstAuthor] = [articleUrl];
                     authorsCount++;
 
-                    // Stop once we have collected 10 authors
+                    // Stop once we have collected 20 authors
                     if (authorsCount >= 20) {
                         break;
                     }
                 }
             }
 
-            // Exit if we reached 10 authors
+            // Exit if we reached 20 authors
             if (authorsCount >= 20) {
                 break;
             }

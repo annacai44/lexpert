@@ -28,22 +28,42 @@ const API_KEY = process.env.REACT_APP_API_KEY;
 console.log("OpenAI API Key Loaded:", !!API_KEY);  // Should print true
 
 // Define route to fetch first authors based on search query
-app.get('/api/getFirstAuthors', async (req, res) => {
-    const { query } = req.query;
+app.post('/api/getFirstAuthors', async (req, res) => {
+    const { topic, userBackground } = req.body;
   
-    if (!query) {
-      return res.status(400).send('Query parameter is required');
+    if (!topic || !userBackground) {
+      return res.status(400).send('topic or user background is missing');
     }
   
-    console.log("Fetching authors for topic:", query);
+    console.log("Fetching authors for topic:", topic);
 
     try {
-        const authors = await getFirstAuthors(query);
-        console.log("authors:", authors);
+        const authors = await getFirstAuthors(topic);
 
-        topicConversations[query] = [];
+        const systemPrompt = `Given the following dictionary of authors and their associated research papers sourced from Google Scholar 
+        on a specific topic, return only the top 5 authors who are considered experts in that topic. Base your selection on factors 
+        such as citation impact, publication quality, and relevance to the topic. Additionally, prioritize experts that align with 
+        the user's background to ensure relevance. The user background is: "${userBackground}". Return only a dictionary in the same format, 
+        without any explanations or additional text.`;
 
-        res.json(authors);
+        const userPrompt = `Dictionary: ${JSON.stringify(authors)}
+        topic: ${topic}`
+
+        const response = await axios.post(
+            "https://api.openai.com/v1/chat/completions",
+            {
+                model: "gpt-4",
+                messages: [
+                    {role: "system", content: systemPrompt},
+                    {role: "user", content: userPrompt}
+                ],
+            },
+            { headers: { Authorization: `Bearer ${API_KEY}` } }
+        );
+
+        topicConversations[topic] = [];
+
+        res.json(JSON.parse(response.data.choices[0].message.content));
     } catch (error) {
         console.error("Error fetching authors:", error.response || error.message);
         res.status(500).json({ error: error.message });
