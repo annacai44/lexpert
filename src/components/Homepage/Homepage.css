@@ -6,8 +6,8 @@
     margin: 2em;
 }
 
-#issue-textfield {
-    margin-top: 25px;
+.issue-textfield {
+    margin-top: 40px;
 }
 
 .input-area {
@@ -39,4 +39,8 @@
     display: flex;
     flex-direction: column;
     align-items: center;
+}
+
+.input-question {
+    margin-bottom: 10px !important;
 }

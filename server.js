@@ -18,97 +18,132 @@ app.get("/", (req, res) => {
 app.use(cors());
 app.use(express.json());
 
-// Store conversations in memory (use a database for production)
-let userSessions;
+let topicConversations = {};
 
 const API_KEY = process.env.REACT_APP_API_KEY;
-console.log("🗝️ OpenAI API Key Loaded:", !!API_KEY);
+console.log("OpenAI API Key Loaded:", !!API_KEY);  // Should print true
 
-// ✅ **LOGGING: Check API key exists**
-if (!API_KEY) {
-  console.error("🚨 ERROR: Missing OpenAI API Key! Add it to your .env file.");
-  process.exit(1); // Stop server if no API key
-}
+// Define route to fetch first authors based on search query
+app.post('/api/getFirstAuthors', async (req, res) => {
+    const { topic, userBackground } = req.body;
+  
+    if (!topic || !userBackground) {
+      return res.status(400).send('topic or user background is missing');
+    }
+  
+    console.log("Fetching authors for topic:", topic);
 
-// **Fetch First Authors Route**
-app.get("/api/getFirstAuthors", async (req, res) => {
-  const { query } = req.query;
+    try {
+        const authors = await getFirstAuthors(topic);
 
-  if (!query) {
-    return res.status(400).json({ error: "Query parameter is required" });
-  }
+        const systemPrompt = `Given the following dictionary of authors and their associated research papers sourced from Google Scholar 
+        on a specific topic, return only the top 5 authors who are considered experts in that topic. Base your selection on factors 
+        such as citation impact, publication quality, and relevance to the topic. Additionally, prioritize experts that align with 
+        the user's background to ensure relevance. The user background is: "${userBackground}". Return only a dictionary in the same format, 
+        without any explanations or additional text.`;
 
-  console.log("🔎 Searching for authors on topic:", query);
-  try {
-    const authors = await getFirstAuthors(query);
-    console.log("✅ Found authors:", authors);
-    res.json(authors);
-  } catch (error) {
-    console.error("❌ Error fetching authors:", error.response ? error.response.data : error.message);
-    res.status(500).json({ error: error.message });
-  }
+        const userPrompt = `Dictionary: ${JSON.stringify(authors)}
+        topic: ${topic}`
+
+        const response = await axios.post(
+            "https://api.openai.com/v1/chat/completions",
+            {
+                model: "gpt-4",
+                messages: [
+                    {role: "system", content: systemPrompt},
+                    {role: "user", content: userPrompt}
+                ],
+            },
+            { headers: { Authorization: `Bearer ${API_KEY}` } }
+        );
+
+        topicConversations[topic] = [];
+
+        res.json(JSON.parse(response.data.choices[0].message.content));
+    } catch (error) {
+        console.error("Error fetching authors:", error.response || error.message);
+        res.status(500).json({ error: error.message });
+    }
 });
 
 // **Chat Route with Web Search**
 app.post("/api/chat", async (req, res) => {
-    const { message, firstRequest } = req.body;
-  
-    if (!message) {
-      return res.status(400).json({ error: "Missing message in request body" });
+    const { message, firstRequest, topic, author } = req.body;
+
+    if (!message || !topic) {
+        return res.status(400).json({ error: "Missing message or topic" });
     }
-  
-    console.log("\n📩 **Received Chat Request**");
-    console.log("🔹 Message:", message);
-    console.log("🔹 First Request:", firstRequest);
-  
-    // Clear previous messages when starting a new topic
+
     if (firstRequest) {
-      console.log("🆕 Starting new conversation...");
-      userSessions = [];
-      userSessions.push({ role: "system", content: "You are a helpful assistant." });
+        console.log("adding initialPrompt to messages");
+        topicConversations[topic].push({
+            role: "system",
+            content: `${message}`,
+        });
+        return res.json({});
     }
-  
-    userSessions.push({ role: "user", content: message });
-  
+
+    topicConversations[topic].push({ role: "user", content: message });
+
     try {
-      console.log("🌍 Calling OpenAI API with web search...");
-  
-      const response = await axios.post(
-          "https://api.openai.com/v1/responses",
-          {
-            model: "gpt-4o",
-            tools: [{ type: "web_search_preview" }], 
-            tool_choice: { type: "web_search_preview" },
-            input: message, 
-          },
-          { headers: { Authorization: `Bearer ${API_KEY}` } }
-      );      
-  
-      console.log("✅ OpenAI API response received.");
-      console.log("📝 Full Response:", JSON.stringify(response.data, null, 2));
-  
-      // ✅ Fix: Extract correct response field
-      let assistantReply = "No response available";
-      
-      if (response.data && response.data.output) {
-        const messageItem = response.data.output.find(item => item.type === "message");
-        if (messageItem && messageItem.content) {
-            const textResponse = messageItem.content.find(entry => entry.type === "output_text");
-            if (textResponse && textResponse.text) {
-                assistantReply = textResponse.text;
-            }
-        }
-    }
-  
-      console.log("📝 Assistant Reply (Fixed):", assistantReply);
-  
-      userSessions.push({ role: "assistant", content: assistantReply });
-  
-      res.json({ response: assistantReply });
-  
+        const response = await axios.post(
+            "https://api.openai.com/v1/chat/completions",
+            {
+                model: "gpt-4",
+                messages: topicConversations[topic],
+            },
+            { headers: { Authorization: `Bearer ${API_KEY}` } }
+        );
+
+        const assistantReply = response.data.choices[0].message.content;
+        topicConversations[topic].push({"role": "assistant", "content": assistantReply});
+
+        console.log("whole conversation so far:", topicConversations[topic]);
+
+        res.json(assistantReply);
     } catch (error) {
-      console.error("❌ OpenAI API Error:", error.response ? error.response.data : error.message);
-      res.status(500).json({ error: "Failed to fetch response from OpenAI API." });
+        console.error("OpenAI API Error:", error.response?.data || error.message);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+
+// Route for filtering/refining expert results
+app.post("/api/filterExperts", async (req, res) => {
+    const { topic, filterRequest } = req.body;
+
+    if (!topic || !filterRequest) {
+        return res.status(400).json({ error: "Missing topic or filterRequest." });
+    }
+
+    const systemPrompt = `The user now wants to filter the experts down. You will receive a prompt from the user, and based on the prompt, 
+    you should narrow down the experts that you have provided information about to only those that fit the filtering prompt. Keep all the 
+    information for the experts the same.`;
+
+    topicConversations[topic].push({"role": "system", "content": systemPrompt});
+    topicConversations[topic].push({ role: "user", content: filterRequest });
+
+    console.log(`Filtering experts for topic: ${topic} with request: ${filterRequest}`);
+
+    try {
+        const response = await axios.post(
+            "https://api.openai.com/v1/chat/completions",
+            {
+                model: "gpt-4",
+                messages: topicConversations[topic],
+            },
+            { headers: { Authorization: `Bearer ${API_KEY}` } }
+        );
+
+        const assistantReply = response.data.choices[0].message.content;
+        topicConversations[topic].push({"role": "assistant", "content": assistantReply});
+
+        console.log("whole conversation so far:", topicConversations[topic]);
+
+        res.json(assistantReply);
+    } catch (error) {
+        console.error("OpenAI API Error:", error.response?.data || error.message);
+        res.status(500).json({ error: error.message });
     }
   });
   
