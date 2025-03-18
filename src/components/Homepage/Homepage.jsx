@@ -47,60 +47,67 @@ function Homepage() {
 
       setTimeout(() => {
         setShowAuthorNames(false);
-      }, 15000); // 15 seconds delay
+      }, 12000); // 12 seconds delay
     }
   }, [authorNames]);
 
-  const formatAuthorNamesAndPapers = () => {
-    if (authorNames) {
-      return Object.entries(authorNames)
-        .map(([author, papers]) => `${author}: ${papers.join(", ")}`)
-        .join("\n");
-    }
-    return "";
-  };
-
   const sendFirstOpenAIRequest = async () => {
-    const formattedNamesAndPapers = formatAuthorNamesAndPapers();
+    let combinedResponse = "";
 
-    const newUserRequest = `Here is a list of people who wrote papers related to ${topic}. 
-    Using the collected papers from Google Scholar and other online sources, provide the following for each author:
-    - Full name in bold. 
-    - Position (bolded) (e.g., university).
-    - Expertise (bolded) (field of study, etc).
-    - Background (bolded, labeled as 'Background.) summary explaining why they are a credible expert on ${topic}, and 
-    also summarize (be specific) their papers attached and anything else you find out online about their work on this topic.' 
-    - Only include people who are alive and active today (so double check that they are not dead)
-    - Links (bolded) to their works and any other works you find yourself (make sure the hyperlink shows the title of the work)
-    - Do not include anything else. If no information is available for an author, exclude them from the list.
-
-    Provide the information for each author. If you leave any authors off of your final output, explain why they were left off. 
-
-    Here are the authors and their papers:
-    ${formattedNamesAndPapers}
-    `;
-
-    console.log("prompt sent to chatgpt:\n", newUserRequest);
-
+    const initialPrompt = `You will receive a list of experts and their papers related to the topic ${topic}.  
+    Your task is to format their information consistently and concisely.  
+    Use the following structure for each expert:  
+  
+    - **Full Name** at the top in bold  
+    - **Position** (university, organization)  
+    - **Expertise** (field of study, research area)  
+    - **Background** (why they are credible, based on papers and other sources)  
+    - **Links** (hyperlinks to their works and related research)  
+  
+    Only include experts who are alive and active today. A list of experts and their papers will follow.`;
+  
     try {
-      const response = await axios.post("http://localhost:5002/api/chat", {
-        message: newUserRequest,
+      await axios.post("http://localhost:5002/api/chat", {
+        message: initialPrompt,
         firstRequest: true,
+        topic,
+        author: null
       });
 
-      setOpenAIResponse(response.data);
-      setFindingInfoOnExperts(false);
+      console.log('doneee');
+  
+      // Step 2: Send authors incrementally
+      for (const [author, papers] of Object.entries(authorNames)) {
+        const authorMessage = `Author: **${author}**  
+        Papers: ${papers.join(", ")}`;
+  
+        console.log(`Sending author: ${author}`);
+  
+        const response = await axios.post("http://localhost:5002/api/chat", {
+          message: authorMessage,
+          firstRequest: false,
+          topic,
+          author: author
+        });
+  
+        // Append response to the combined markdown string
+        combinedResponse += `## ${author}\n\n${response.data}\n\n---\n\n`;
+
+        setOpenAIResponse(combinedResponse);
+      }
     } catch (error) {
-      console.error(error);
+      console.error(`Error fetching data:`, error);
     }
+
+    setFindingInfoOnExperts(false);
   };
 
   const sendSubsequentOpenAIRequests = async () => {
     setSentFilterRequest(true);
     try {
-      const response = await axios.post("http://localhost:5002/api/chat", {
-        message: filterRequest,
-        firstRequest: false
+      const response = await axios.post("http://localhost:5002/api/filterExperts", {
+        topic,
+        filterRequest
       });
       setOpenAIResponse(response.data);
     } catch (error) {
