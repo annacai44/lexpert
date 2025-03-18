@@ -75,7 +75,7 @@ function Homepage() {
     - **Background** (why they are credible, based on papers and other sources)  
     - **Links** (hyperlinks to their works and related research, make sure the hyperlink is ONLY the TITLE of the paper)  
   
-    Only include experts who are alive and active today. A list of experts and their papers will follow.`;
+    Only include experts who are alive and active today. Only list each expert once. A list of experts and their papers will follow.`;
   
     try {
       await axios.post("http://localhost:5002/api/chat", {
