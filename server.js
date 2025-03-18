@@ -117,8 +117,8 @@ app.post("/api/filterExperts", async (req, res) => {
     }
 
     const systemPrompt = `The user now wants to filter the experts down. You will receive a prompt from the user, and based on the prompt, 
-    you should narrow down the experts that you have provided information about to only those that fit the filtering prompt. Keep all the 
-    information for the experts the same.`;
+    you should narrow down the experts that you have provided information about to only those that fit the filtering prompt. Keep the 
+    structure for the experts the same. Make sure to include their names in bold. Do not add any explanations or additional text.`;
 
     topicConversations[topic].push({"role": "system", "content": systemPrompt});
     topicConversations[topic].push({ role: "user", content: filterRequest });

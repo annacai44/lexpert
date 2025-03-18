@@ -6,7 +6,7 @@ function App() {
   return (
     <div className="App">
       <AppBar position="static">
-        <Toolbar>
+        <Toolbar className="toolbar">
           <Typography variant="h4" component="div" sx={{ flexGrow: 1 }}>
             ExpertLink
           </Typography>

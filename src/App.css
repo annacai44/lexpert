@@ -36,3 +36,11 @@
     transform: rotate(360deg);
   }
 }
+
+.toolbar {
+  background-color: #4E2A84;
+}
+
+button {
+  background-color: #4E2A84 !important;
+}
