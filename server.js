@@ -2,22 +2,18 @@ const express = require("express");
 const cors = require("cors");
 const axios = require("axios");
 const { getFirstAuthors } = require("./utils/apiUtils.js");
-require('dotenv').config();
+require("dotenv").config();
 
 const app = express();
 const port = 5002;
 
+const path = require("path");
 
-// Serve React build files
-const path = require('path');
+app.use(express.static(path.join(__dirname, "build")));
 
-// If you're serving a React app after building it
-app.use(express.static(path.join(__dirname, 'build')));
-
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'build', 'index.html'));
+app.get("/", (req, res) => {
+  res.sendFile(path.join(__dirname, "build", "index.html"));
 });
-
 
 app.use(cors());
 app.use(express.json());
@@ -70,6 +66,7 @@ app.post('/api/getFirstAuthors', async (req, res) => {
     }
 });
 
+// **Chat Route with Web Search**
 app.post("/api/chat", async (req, res) => {
     const { message, firstRequest, topic, author } = req.body;
 
@@ -148,6 +145,8 @@ app.post("/api/filterExperts", async (req, res) => {
         console.error("OpenAI API Error:", error.response?.data || error.message);
         res.status(500).json({ error: error.message });
     }
-});
+  });
+  
 
-app.listen(port, () => console.log("Server running on port 5002"));
+// Start server
+app.listen(port, () => console.log(`🚀 Server running on port ${port}`));
