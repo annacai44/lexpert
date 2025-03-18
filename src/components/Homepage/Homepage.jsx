@@ -67,7 +67,7 @@ function Homepage() {
 
     const initialPrompt = `You will receive a list of experts and their papers related to the topic ${topic}.  
     Your task is to format their information consistently and concisely. If you notice the same expert twice because of abbreviations, make sure you only use one of them!
-    Use the following structure for each expert (FULL NAME):  
+    Use the following structure for each expert:  
 
     - **Position** (university, organization)  
     - **Expertise** (field of study, research area)  
